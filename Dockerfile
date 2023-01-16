@@ -5,6 +5,6 @@ WORKDIR /python
 
 ADD python ./
 
-RUN pip install requests beautifulsoup4 praw openai
+RUN pip install requests beautifulsoup4 praw openai python-dotenv
 
 CMD ["python3", "main.py"]
