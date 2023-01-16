@@ -12,7 +12,8 @@ class GPTSummmarizer:
     def summarize(self, text: str) -> str:
         prompt = self.command + text
         completion = openai.Completion.create(engine=self.engine, prompt=prompt, max_tokens=128)
-        return completion.choices[0].text # type: ignore
+        return completion.choices[0].text
+
 
 
 
