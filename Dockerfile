@@ -1,8 +1,10 @@
 # Dockerfile, Image, Container
 FROM python:3.11
 
-RUN pip install requests beautifulsoup4 praw openai
+WORKDIR /python
 
 ADD python ./
 
-CMD [ "python3", "./main.py"]
+RUN pip install requests beautifulsoup4 praw openai python-dotenv
+
+CMD ["python3", "main.py"]
