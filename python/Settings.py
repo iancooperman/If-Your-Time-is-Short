@@ -14,6 +14,9 @@ class Settings:
             raise AttributeError("'{}' object has no attribute '{}'".format(self.__class__.__name__, item))
 
 
+_settings_file_path = Path(str(Path(__file__).parents[0]) + "/../settings.json")
+SETTINGS = Settings(_settings_file_path)
+
 if __name__ == '__main__':
     settings_file_path = Path(str(Path(__file__).parents[0]) + "/../settings.json")
     settings = Settings(settings_file_path)
