@@ -1,6 +1,8 @@
-import json
-import openai
 from pathlib import Path
+
+import openai
+from Settings import Settings
+
 
 class GPTSummmarizer:
     def __init__(self, openai_api_key: str, engine: str="text-davinci-003", **kwargs: dict[str, str]):
@@ -27,8 +29,14 @@ if __name__ == "__main__":
     """
     settings_file_path = Path(str(Path(__file__).parents[0]) + "/../settings.json")
 
-    settings = json.load(open(settings_file_path, 'r', encoding='utf-8'))
-    summarizer = GPTSummmarizer(settings["OPENAI_API_KEY"])
+    SETTINGS = Settings()
+    SETTINGS.load_settings(settings_file_path)
+
+
+    other_settings_object = Settings()
+    
+
+    summarizer = GPTSummmarizer(other_settings_object["OPENAI_API_KEY"])
     summary = summarizer.summarize(test_text)
     print(summary)
 
