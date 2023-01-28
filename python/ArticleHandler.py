@@ -5,9 +5,12 @@ from bs4 import BeautifulSoup
 
 
 # Abstract Base Class
-class Article(metaclass=abc.ABCMeta):
+class ArticleHandler(metaclass=abc.ABCMeta):
     def __init__(self, url) -> None:
         self._url = url
+        
+
+    def _build_soup(self, url) -> BeautifulSoup:
         response = requests.get(url)
         if response.status_code == 200:
             self._content = response.text
@@ -15,6 +18,11 @@ class Article(metaclass=abc.ABCMeta):
             requests.exceptions.HTTPError(response.status_code)
 
         self._soup = BeautifulSoup(self._content, 'html.parser')
+
+    @classmethod
+    @abc.abstractmethod
+    def _valid_url(self, url) -> bool:
+        pass
 
     @abc.abstractmethod
     def get_title(self) -> str:

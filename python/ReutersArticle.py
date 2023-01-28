@@ -1,11 +1,13 @@
 import abc
 
 import requests
-from Article import Article
+from ArticleHandler import ArticleHandler
 from bs4 import BeautifulSoup
+import re
+import urllib.parse
 
 
-class ReutersArticle(Article):
+class ReutersArticleHandler(ArticleHandler):
     # def __init__(self, url):
     #     self._url = url
     #     response = requests.get(url)
@@ -24,6 +26,19 @@ class ReutersArticle(Article):
     #   cnn.com
     #   nbcnews.com
 
+    @classmethod
+    def _valid_url(cls, url) -> bool:
+
+        parse_result = urllib.parse.urlparse(url)
+
+
+        # not great, but a lot more readable than a regular expression
+        return parse_result.scheme == 'https' and parse_result.netloc == "www.reuters.com" and parse_result.path in ["world/us/"]
+        
+
+        re.match(r"^https://www.reuters.com/([a-z]+/)+[a-zA-Z0-9-]+/([a-zA-Z0-9-]+/)\d{4}-\d{2}-\d{2}/*$", url)
+
+
     def get_title(self):
         h1 = self._soup.select_one('h1[data-testid="Heading"]')
         title = h1.get_text()
@@ -40,6 +55,6 @@ class ReutersArticle(Article):
 
 
 if __name__ ==  "__main__":
-    article = ReutersArticle("https://www.reuters.com/world/us/seven-dead-shooting-half-moon-bay-calif-cbs-news-2023-01-24/")
+    article = ReutersArticleHandler("https://www.reuters.com/world/us/seven-dead-shooting-half-moon-bay-calif-cbs-news-2023-01-24/")
     print(article.get_body())
     print(article.get_title())
