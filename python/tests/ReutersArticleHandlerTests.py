@@ -2,7 +2,7 @@ import sys
 import unittest
 
 sys.path.append(__file__ + "/../..")
-from ReutersArticleHandler import ReutersArticleHandler
+from ArticleHandler import ReutersArticleHandler
 
 
 class TestValidURL(unittest.TestCase):
