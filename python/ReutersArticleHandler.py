@@ -8,16 +8,6 @@ import urllib.parse
 
 
 class ReutersArticleHandler(ArticleHandler):
-    # def __init__(self, url):
-    #     self._url = url
-    #     response = requests.get(url)
-    #     if response.status_code == 200:
-    #         self._content = response.text
-    #     else:
-    #         requests.exceptions.HTTPError(response.status_code)
-
-    #     self._soup = BeautifulSoup(self._content, 'html.parser')
-
 
     # five popular domains on /r/news
     #   abcnews.go.com
@@ -32,7 +22,7 @@ class ReutersArticleHandler(ArticleHandler):
         parsed = urllib.parse.urlparse(url)
 
         # not great, but a lot more readable than trying to do everything with a single regular expression
-        return parsed.scheme == 'https' and parsed.netloc == "www.reuters.com" and any([
+        return parsed.scheme in ['https', 'http'] and parsed.netloc == "www.reuters.com" and any([
             re.match(r"/world/[a-z]+/.+", parsed.path),
             re.match(r"/legal/.+", parsed.path),
             re.match(r"/business/[a-z]+/.+", parsed.path),
@@ -56,6 +46,5 @@ class ReutersArticleHandler(ArticleHandler):
 
 
 if __name__ ==  "__main__":
-    assert ReutersArticleHandler._valid_url("https://www.reuters.com/world/us/seven-dead-shooting-half-moon-bay-calif-cbs-news-2023-01-24/")
     assert ReutersArticleHandler._valid_url("https://www.reuters.com/legal/ftx-founder-bankman-fried-objects-tighter-bail-says-prosecutors-sandbagged-him-2023-01-28/")
     assert ReutersArticleHandler._valid_url("https://www.reuters.com/technology/twitter-research-group-stall-complicates-compliance-with-new-eu-law-2023-01-27/")

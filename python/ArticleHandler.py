@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 class ArticleHandler(metaclass=abc.ABCMeta):
     def __init__(self, url) -> None:
         self._url = url
+        self._build_soup(self._url)
         
 
     def _build_soup(self, url) -> BeautifulSoup:
