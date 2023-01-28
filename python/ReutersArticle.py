@@ -29,15 +29,16 @@ class ReutersArticleHandler(ArticleHandler):
     @classmethod
     def _valid_url(cls, url) -> bool:
 
-        parse_result = urllib.parse.urlparse(url)
+        parsed = urllib.parse.urlparse(url)
 
-
-        # not great, but a lot more readable than a regular expression
-        return parse_result.scheme == 'https' and parse_result.netloc == "www.reuters.com" and parse_result.path in ["world/us/"]
-        
-
-        re.match(r"^https://www.reuters.com/([a-z]+/)+[a-zA-Z0-9-]+/([a-zA-Z0-9-]+/)\d{4}-\d{2}-\d{2}/*$", url)
-
+        # not great, but a lot more readable than trying to do everything with a single regular expression
+        return parsed.scheme == 'https' and parsed.netloc == "www.reuters.com" and any([
+            re.match(r"/world/[a-z]+/.+", parsed.path),
+            re.match(r"/legal/.+", parsed.path),
+            re.match(r"/business/[a-z]+/.+", parsed.path),
+            re.match(r"/technology/.+", parsed.path),
+            re.match(r"/lifestyle/.+", parsed.path),
+        ]) 
 
     def get_title(self):
         h1 = self._soup.select_one('h1[data-testid="Heading"]')
@@ -55,6 +56,6 @@ class ReutersArticleHandler(ArticleHandler):
 
 
 if __name__ ==  "__main__":
-    article = ReutersArticleHandler("https://www.reuters.com/world/us/seven-dead-shooting-half-moon-bay-calif-cbs-news-2023-01-24/")
-    print(article.get_body())
-    print(article.get_title())
+    assert ReutersArticleHandler._valid_url("https://www.reuters.com/world/us/seven-dead-shooting-half-moon-bay-calif-cbs-news-2023-01-24/")
+    assert ReutersArticleHandler._valid_url("https://www.reuters.com/legal/ftx-founder-bankman-fried-objects-tighter-bail-says-prosecutors-sandbagged-him-2023-01-28/")
+    assert ReutersArticleHandler._valid_url("https://www.reuters.com/technology/twitter-research-group-stall-complicates-compliance-with-new-eu-law-2023-01-27/")
