@@ -95,3 +95,18 @@ class APNewsArticleHandler(ArticleHandler):
         title = title_tag.get_text()[:-10]
 
         return title
+
+    def get_body(self):
+        p_tags = self._soup.select('p')
+        paragraphs = []
+
+        for p in p_tags:
+            paragraph = p.get_text()
+            if paragraph != "___":
+                paragraphs.append(paragraph)
+            else:
+                break
+
+        return " ".join(paragraphs)
+        
+
