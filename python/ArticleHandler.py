@@ -83,7 +83,9 @@ class APNewsArticleHandler(ArticleHandler):
 
     @classmethod
     def _valid_url(cls, url) -> bool:
-        pass
+        parsed = urllib.parse.urlparse(url)
+
+        return parsed.scheme in ['https', 'http'] and parsed.netloc == "apnews.com" and re.match(r"/article/.+", parsed.path)
 
 
     def get_title(self):
@@ -106,7 +108,7 @@ class APNewsArticleHandler(ArticleHandler):
 
         for p in p_tags:
             paragraph = p.get_text()
-            if paragraph != "___":
+            if len(set([c for c in paragraph])) > 1: # test that excludes a separater at the bottom of articles
                 paragraphs.append(paragraph)
             else:
                 break
@@ -114,3 +116,6 @@ class APNewsArticleHandler(ArticleHandler):
         return " ".join(paragraphs)
         
 
+if __name__ == "__main__":
+    article_handler = APNewsArticleHandler(r"https://apnews.com/article/weather-climate-and-environment-europe-longyearbyen-religion-380c8c17b910833fee2e04dcfbac10a7")
+    print(article_handler.get_body())

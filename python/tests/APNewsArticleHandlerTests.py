@@ -9,6 +9,12 @@ class TestValidURL(unittest.TestCase):
     def test_1(self):
         self.assertTrue(APNewsArticleHandler._valid_url(r"https://apnews.com/article/politics-memphis-crime-law-enforcement-1b7e8fa4ed7120a897086250d5d6da35?utm_source=homepage&utm_medium=TopNews&utm_campaign=position_01"))
 
+    def test_2(self):
+        self.assertTrue(APNewsArticleHandler._valid_url(r"https://apnews.com/article/crime-legal-proceedings-california-shootings-bcde624364934f396ff0e56953dec93c"))
+
+    def test_3(self):
+        self.assertTrue(APNewsArticleHandler._valid_url(r"https://apnews.com/article/weather-climate-and-environment-europe-longyearbyen-religion-380c8c17b910833fee2e04dcfbac10a7"))
+
 class TestGetTitle(unittest.TestCase):
 
     def test_1(self):
