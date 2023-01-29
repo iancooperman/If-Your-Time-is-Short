@@ -77,3 +77,21 @@ class ReutersArticleHandler(ArticleHandler):
     
     def __repr__(self):
         return str(self._soup)
+
+
+class APNewsArticleHandler(ArticleHandler):
+
+    @classmethod
+    def _valid_url(cls, url) -> bool:
+        pass
+
+
+    def get_title(self):
+        # h1 = self._soup.select_one('h1[class^="Component-heading-"]')
+        # title = h1.get_text()
+        # return title
+
+        title_tag = self._soup.find('title')
+        title = title_tag.get_text()[:-10]
+
+        return title

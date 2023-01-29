@@ -11,17 +11,29 @@ class TestValidURL(unittest.TestCase):
 
 class TestGetTitle(unittest.TestCase):
 
-    def test_get_title(self):
+    def test_1(self):
         article_handler = APNewsArticleHandler("https://apnews.com/article/politics-memphis-crime-law-enforcement-1b7e8fa4ed7120a897086250d5d6da35?utm_source=homepage&utm_medium=TopNews&utm_campaign=position_01")
 
         title = article_handler.get_title()
 
         self.assertEqual(title, "Memphis police disband unit that beat Tyre Nichols")
 
+    def test_2(self):
+        article_handler = APNewsArticleHandler(r"https://apnews.com/article/crime-legal-proceedings-california-shootings-bcde624364934f396ff0e56953dec93c")
+        title = article_handler.get_title()
+        
+        self.assertEqual(title, "Farm where 4 were killed had separate shooting last summer")
+
+    def test_3(self):
+        article_handler = APNewsArticleHandler(r"https://apnews.com/article/weather-climate-and-environment-europe-longyearbyen-religion-380c8c17b910833fee2e04dcfbac10a7")
+        title = article_handler.get_title()
+        
+        self.assertEqual(title, "Spellbinding polar night gets darker in warming Arctic")
+
 
 class TestGetBody(unittest.TestCase):
 
-    def test_get_body(self):
+    def test_1(self):
         article_handler = APNewsArticleHandler("https://apnews.com/article/politics-memphis-crime-law-enforcement-1b7e8fa4ed7120a897086250d5d6da35?utm_source=homepage&utm_medium=TopNews&utm_campaign=position_01")
 
         body = article_handler.get_body()
