@@ -87,17 +87,21 @@ class APNewsArticleHandler(ArticleHandler):
 
 
     def get_title(self):
+        # # normal article
         # h1 = self._soup.select_one('h1[class^="Component-heading-"]')
-        # title = h1.get_text()
-        # return title
+        # if h1:
+        #     title = h1.get_text()
+        #     return title
 
+        # backup plan
         title_tag = self._soup.find('title')
         title = title_tag.get_text()[:-10]
 
         return title
 
     def get_body(self):
-        p_tags = self._soup.select('p')
+        p_tags = self._soup.select('p[class^="Component-root-"]')
+
         paragraphs = []
 
         for p in p_tags:
