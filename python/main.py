@@ -11,9 +11,9 @@ def main():
 
     # initialize Reddit instance
     reddit = Reddit(
-        client_id="my client id", 
+        client_id=settings["reddit"]["client_id"], 
         client_secret=settings["reddit"]["secret"], 
-        user_agent="IfYourTimeIsShort v0.1 by /u/BananaZen314159"
+        user_agent=settings["reddit"]["user_agent"],
         username=settings["reddit"]["username"], 
         password=settings["reddit"]["password"]
     )
@@ -21,11 +21,9 @@ def main():
     subreddits = settings["reddit"]["subreddits"]
 
     urls = []
-    for sub_name in subreddits:
-        subreddit = reddit.subreddit(sub_name)
-        print(subreddit)
-        for post in subreddit.rising(limit=3): # get the top 3 posts at the time 
-            print(post.title)
+    for subreddit_name in subreddits:
+        for submission in reddit.subreddit(subreddit_name).hot(limit=3): # get the top 3 posts at the time 
+            print(submission.title)
 
             # urls.append(post.url)
     
