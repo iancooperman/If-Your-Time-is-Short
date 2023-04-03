@@ -6,7 +6,16 @@ from Settings import Settings
 from GPTSummarizer import GPTSummarizer
 
 
+def comment_format(raw_summary: str):
+    summary_sentences = raw_summary.split('.')
+    for i in range(len(summary_sentences)): # add a markdown bullet point to the front of each sentence
+        summary_sentences[i] = '*' + summary_sentences[i]
+    
+    # glue the sentences back together and return
+    return "\n".join(summary_sentences)
 
+
+        
 
 def main():
     # retrieve settings
@@ -37,7 +46,7 @@ def main():
             article_body = article.get_body()
             summary = summarizer.summarize(article_body)
             print(article.get_title())
-            print(summary)
+            print(comment_format(summary))
         except NotImplementedError as e:
             continue
 
