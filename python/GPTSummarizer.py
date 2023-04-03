@@ -10,7 +10,7 @@ class GPTSummarizer:
         self.engine = engine
         self.params = kwargs
 
-        self.command = "Please summarize the following text in 3 sentences: \n"
+        self.command = "Please summarize the following text in exactly 3 sentences, leaving no whitespace above or below the paragraph created: \n"
         
     def summarize(self, text: str) -> str:
         prompt = self.command + text

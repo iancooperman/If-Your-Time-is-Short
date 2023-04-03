@@ -7,9 +7,11 @@ from GPTSummarizer import GPTSummarizer
 
 
 def comment_format(raw_summary: str):
-    summary_sentences = raw_summary.split('.')
+    raw_summary = raw_summary.strip()
+
+    summary_sentences = raw_summary.split('. ')
     for i in range(len(summary_sentences)): # add a markdown bullet point to the front of each sentence
-        summary_sentences[i] = '*' + summary_sentences[i]
+        summary_sentences[i] = '* ' + summary_sentences[i]
     
     # glue the sentences back together and return
     return "\n".join(summary_sentences)
