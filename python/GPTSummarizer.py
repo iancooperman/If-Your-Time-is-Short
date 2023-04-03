@@ -4,7 +4,7 @@ import openai
 from Settings import Settings
 
 
-class GPTSummmarizer:
+class GPTSummarizer:
     def __init__(self, openai_api_key: str, engine: str="text-davinci-003", **kwargs: dict[str, str]):
         openai.api_key = openai_api_key
         self.engine = engine
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     other_settings_object = Settings()
     
 
-    summarizer = GPTSummmarizer(other_settings_object["OPENAI_API_KEY"])
+    summarizer = GPTSummarizer(other_settings_object["OPENAI_API_KEY"])
     summary = summarizer.summarize(test_text)
     print(summary)
 

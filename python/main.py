@@ -1,7 +1,11 @@
 import logging
 
+from Article import Article
 from praw import Reddit
 from Settings import Settings
+from GPTSummarizer import GPTSummarizer
+
+
 
 
 def main():
@@ -23,11 +27,20 @@ def main():
     urls = []
     for subreddit_name in subreddits:
         for submission in reddit.subreddit(subreddit_name).hot(limit=3): # get the top 3 posts at the time 
-            print(submission.title)
+            urls.append(submission.url)
 
-            # urls.append(post.url)
     
-    print(urls)
+    summarizer = GPTSummarizer(settings["OPENAI_API_KEY"])
+    for url in urls:
+        try:
+            article = Article(url)
+            article_body = article.get_body()
+            summary = summarizer.summarize(article_body)
+            print(article.get_title())
+            print(summary)
+        except NotImplementedError as e:
+            continue
+
 
 
 if __name__ == "__main__":
