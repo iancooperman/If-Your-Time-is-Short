@@ -17,12 +17,33 @@ def comment_format(raw_summary: str):
     return "\n".join(summary_sentences)
 
 
-        
+def logger_config():
+
+    log = logging.getLogger()
+    log.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+
+    fh = logging.FileHandler('iytis.log', mode='a', encoding='utf-8')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)    
+    log.addHandler(fh)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    log.addHandler(ch)
+
 
 def main():
+    # initialize logger
+    logger_config()
+
     # retrieve settings
+    settings_file_name = "settings.json"
     settings = Settings()
-    settings.load_settings("settings.json")
+    settings.load_settings(settings_file_name)
+    logging.info(f"{settings_file_name} loaded")
 
     # initialize Reddit instance
     reddit = Reddit(
@@ -32,6 +53,8 @@ def main():
         username=settings["reddit"]["username"], 
         password=settings["reddit"]["password"]
     )
+
+    logging.info('Reddit instance initialized')
 
     subreddits = settings["reddit"]["subreddits"]
 
@@ -50,7 +73,7 @@ def main():
             print(article.get_title())
             print(comment_format(summary))
         except NotImplementedError as e:
-            continue
+            logging.warning(f"{url} is not parseable at this time")
 
 
 
