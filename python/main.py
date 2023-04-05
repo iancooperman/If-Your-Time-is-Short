@@ -6,7 +6,7 @@ from Settings import Settings
 from GPTSummarizer import GPTSummarizer
 
 
-def comment_format(raw_summary: str):
+def comment_format(raw_summary: str) -> str:
     raw_summary = raw_summary.strip()
 
     summary_sentences = raw_summary.split('. ')
@@ -17,36 +17,36 @@ def comment_format(raw_summary: str):
     return "\n".join(summary_sentences)
 
 
-def logger_config():
+def logging_config() -> None:
 
-    log = logging.getLogger()
+    log: logging.Logger = logging.getLogger()
     log.setLevel(logging.DEBUG)
 
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+    formatter: logging.Formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
 
-    fh = logging.FileHandler('iytis.log', mode='a', encoding='utf-8')
+    fh: logging.FileHandler = logging.FileHandler('iytis.log', mode='a', encoding='utf-8')
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)    
     log.addHandler(fh)
 
-    ch = logging.StreamHandler()
+    ch: logging.StreamHandler = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(formatter)
     log.addHandler(ch)
 
 
-def main():
+def main() -> None:
     # initialize logger
-    logger_config()
+    logging_config()
 
     # retrieve settings
-    settings_file_name = "settings.json"
-    settings = Settings()
+    settings_file_name: str = "settings.json"
+    settings: Settings = Settings()
     settings.load_settings(settings_file_name)
     logging.info(f"{settings_file_name} loaded")
 
     # initialize Reddit instance
-    reddit = Reddit(
+    reddit: Reddit = Reddit(
         client_id=settings["reddit"]["client_id"], 
         client_secret=settings["reddit"]["secret"], 
         user_agent=settings["reddit"]["user_agent"],
@@ -56,7 +56,7 @@ def main():
 
     logging.info('Reddit instance initialized')
 
-    subreddits = settings["reddit"]["subreddits"]
+    subreddit_names: list[str] = settings["reddit"]["subreddits"]
 
     urls = []
     for subreddit_name in subreddits:
@@ -64,14 +64,14 @@ def main():
             urls.append(submission.url)
 
     
-    summarizer = GPTSummarizer(settings["OPENAI_API_KEY"])
+    summarizer: GPTSummarizer = GPTSummarizer(settings["OPENAI_API_KEY"])
     for url in urls:
         try:
-            article = Article(url)
-            article_body = article.get_body()
-            summary = summarizer.summarize(article_body)
-            print(article.get_title())
-            print(comment_format(summary))
+            article: Article = Article(url)
+            article_body: str = article.get_body()
+            summary: str = summarizer.summarize(article_body)
+            logging.info(article.get_title())
+            logging.info(comment_format(summary))
         except NotImplementedError as e:
             logging.warning(f"{url} is not parseable at this time")
 
