@@ -24,7 +24,7 @@ def logging_config() -> None:
 
     formatter: logging.Formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
 
-    fh: logging.FileHandler = logging.FileHandler('iytis.log', mode='a', encoding='utf-8')
+    fh: logging.FileHandler = logging.FileHandler('iytis.log', mode='w', encoding='utf-8')
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)    
     log.addHandler(fh)
