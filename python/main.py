@@ -60,7 +60,18 @@ def main() -> None:
 
     urls = []
     for subreddit_name in subreddit_names:
-        for post in reddit.subreddit(subreddit_name).hot(limit=3): # get the top 3 posts at the time 
+        subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
+
+        post_sort: str = settings["reddit"]["post_sort"]
+        post_limit: int = settings["reddit"]["post_limit"]
+
+        generated: str = f"subreddit.{post_sort}(limit={post_limit})"
+        logging.debug(f"Generated code: `{generated}`")
+
+        # run generated code
+        posts = eval(generated)
+
+        for post in posts: # get the top 3 posts at the time 
             urls.append(post.url)
 
     
