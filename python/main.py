@@ -58,10 +58,12 @@ def main() -> None:
 
     subreddit_names: list[str] = settings["reddit"]["subreddits"]
 
-    urls = []
-    for subreddit_name in subreddits:
+    urls: list[str] = []
+    for subreddit_name in subreddit_names:
         for submission in reddit.subreddit(subreddit_name).hot(limit=3): # get the top 3 posts at the time 
             urls.append(submission.url)
+        for post in posts: # get the top 3 posts at the time 
+            urls.append(post.url)
 
     
     summarizer: GPTSummarizer = GPTSummarizer(settings["OPENAI_API_KEY"])
