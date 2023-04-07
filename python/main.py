@@ -21,7 +21,7 @@ def comment_format(raw_summary: str) -> str:
     summary_sentences = tokenizer.tokenize(raw_summary)
 
     for i in range(len(summary_sentences)): 
-        comment += "\t * " + summary_sentences[i] + "\n" # add a tab and a markdown bullet point to the front of each sentence
+        comment += "* " + summary_sentences[i] + "\n" # add a tab and a markdown bullet point to the front of each sentence
         comment += "\n"
 
     comment += "----------------------------------------------------------------\n"
