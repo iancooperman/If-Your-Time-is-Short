@@ -1,21 +1,31 @@
 import logging
 
+import nltk.data
 from Article import Article
+from GPTSummarizer import GPTSummarizer
 from praw import Reddit
 from Settings import Settings
-from GPTSummarizer import GPTSummarizer
 
 
 def comment_format(raw_summary: str) -> str:
-    raw_summary = raw_summary.strip()
-
-    summary_sentences = raw_summary.split('. ')
-    for i in range(len(summary_sentences)): # add a markdown bullet point to the front of each sentence
-        summary_sentences[i] = '* ' + summary_sentences[i]
     
-    # glue the sentences back together and return
-    return "\n".join(summary_sentences)
+    # build the comment piece by piece
+    comment = "If your time is short:\n"
+    
+    # core summary formatting
+    raw_summary = raw_summary.strip()
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+    summary_sentences = tokenizer.tokenize(raw_summary)
 
+    for i in range(len(summary_sentences)): 
+        comment += "\t * " + summary_sentences[i] # add a tab and a markdown bullet point to the front of each sentence
+        comment += "\n"
+
+    comment += "----------------------------------------------------------------\n"
+    comment += "I am a bot in training. Please feel free to DM me any feedback you have."
+
+
+    return comment
 
 def logging_config() -> None:
 
@@ -81,8 +91,8 @@ def main() -> None:
             article: Article = Article(url)
             article_body: str = article.get_body()
             summary: str = summarizer.summarize(article_body)
-            logging.info(article.get_title())
-            logging.info(comment_format(summary))
+            logging.info(f"Article title: {article.get_title()}")
+            logging.info(f"Summary:\n{comment_format(summary)}")
         except NotImplementedError as e:
             logging.warning(f"{url} is not parseable at this time")
 
