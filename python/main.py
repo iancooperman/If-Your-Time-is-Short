@@ -11,17 +11,21 @@ def comment_format(raw_summary: str) -> str:
     
     # build the comment piece by piece
     comment = "If your time is short:\n"
+    comment += "\n"
     
+
+
     # core summary formatting
     raw_summary = raw_summary.strip()
     tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
     summary_sentences = tokenizer.tokenize(raw_summary)
 
     for i in range(len(summary_sentences)): 
-        comment += "\t * " + summary_sentences[i] # add a tab and a markdown bullet point to the front of each sentence
+        comment += "\t * " + summary_sentences[i] + "\n" # add a tab and a markdown bullet point to the front of each sentence
         comment += "\n"
 
     comment += "----------------------------------------------------------------\n"
+    comment += "\n"
     comment += "I am a bot in training. Please feel free to DM me any feedback you have."
 
 
@@ -79,22 +83,23 @@ def main() -> None:
         logging.debug(f"Generated code: `{generated}`")
 
         # run generated code
-        posts = eval(generated)
-
-        for post in posts: # get the top 3 posts at the time 
-            urls.append(post.url)
-
+        submissions = list(eval(generated)) # get the top n posts at the time according the given sort
     
     summarizer: GPTSummarizer = GPTSummarizer(settings["OPENAI_API_KEY"])
-    for url in urls:
+    for submission in submissions:
         try:
-            article: Article = Article(url)
+            article: Article = Article(submission.url)
             article_body: str = article.get_body()
-            summary: str = summarizer.summarize(article_body)
+            generated_summary: str = summarizer.summarize(article_body)
+            formatted_summary: str = comment_format(generated_summary)
             logging.info(f"Article title: {article.get_title()}")
-            logging.info(f"Summary:\n{comment_format(summary)}")
+            logging.info(f"Summary:\n{comment_format(formatted_summary)}")
+
+            # submit the comment!
+            submission.reply(formatted_summary)
+
         except NotImplementedError as e:
-            logging.warning(f"{url} is not parseable at this time")
+            logging.warning(f"{submission.url} is not parseable at this time")
 
 
 
