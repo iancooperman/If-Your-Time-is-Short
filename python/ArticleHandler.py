@@ -1,6 +1,7 @@
 import abc
 import re
 import urllib.parse
+from Settings import Settings
 
 import requests
 from bs4 import BeautifulSoup
@@ -115,6 +116,29 @@ class APNewsArticleHandler(ArticleHandler):
 
         return " ".join(paragraphs)
         
+
+class UniversalArticleHandler(ArticleHandler):
+    
+    @classmethod
+    def _valid_url(self, url) -> bool:
+        settings = Settings()
+        settings.load_settings("settings.json")
+
+        parsed = urllib.parse.urlparse(url)
+        return parsed.scheme in ['https', 'http'] and parsed.netloc not in settings["domain_blacklist"]
+    
+    def get_title(self) -> str:
+        title_tag = self._soup.find('title')
+        title = title_tag.get_text()
+        return title
+    
+
+    # optimized for:
+    # ktla.com
+    def get_body(self) -> str:
+        p_tags = self._soup.find_all('p')
+        body = "\n\n".join([p_tag.get_text() for p_tag in p_tags])
+        return body
 
 if __name__ == "__main__":
     article_handler = APNewsArticleHandler(r"https://apnews.com/article/weather-climate-and-environment-europe-longyearbyen-religion-380c8c17b910833fee2e04dcfbac10a7")
