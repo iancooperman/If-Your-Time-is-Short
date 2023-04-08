@@ -136,8 +136,11 @@ class UniversalArticleHandler(ArticleHandler):
     # optimized for:
     # ktla.com
     def get_body(self) -> str:
-        p_tags = self._soup.find_all('p')
-        body = "\n\n".join([p_tag.get_text() for p_tag in p_tags])
+        body_p_tags = self._soup.find_all('p[class*="article"]')
+        body = "\n\n".join([p_tag.get_text() for p_tag in body_p_tags])
+
+
+
         return body
 
 if __name__ == "__main__":
