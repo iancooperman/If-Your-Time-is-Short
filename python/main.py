@@ -1,10 +1,10 @@
 import logging
 
 import nltk.data
-from Article import Article
 from GPTSummarizer import GPTSummarizer
 from praw import Reddit
 from Settings import Settings
+from newspaper import Article
 
 
 def comment_format(raw_summary: str) -> str:
@@ -72,7 +72,7 @@ def main() -> None:
 
     subreddit_names: list[str] = settings["reddit"]["subreddits"]
 
-    urls = []
+    urls: list[str] = []
     for subreddit_name in subreddit_names:
         subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
 
@@ -89,10 +89,12 @@ def main() -> None:
     for submission in submissions:
         try:
             article: Article = Article(submission.url)
-            article_body: str = article.get_body()
+            article.download()
+            article.parse()
+            article_body: str = article.text
             generated_summary: str = summarizer.summarize(article_body)
             formatted_summary: str = comment_format(generated_summary)
-            logging.info(f"Article title: {article.get_title()}")
+            logging.info(f"Article title: {article.title}")
             logging.info(f"Summary:\n{comment_format(formatted_summary)}")
 
             # submit the comment!
