@@ -5,6 +5,8 @@ import nltk.data
 from GPTSummarizer import GPTSummarizer
 from newspaper import Article
 from praw import Reddit
+from urllib.robotparser import RobotFileParser
+from urllib.parse import urlparse
 
 
 def comment_format(raw_summary: str) -> str:
@@ -88,17 +90,35 @@ def main() -> None:
     summarizer: GPTSummarizer = GPTSummarizer(config.get("openai", "API_Key"))
     for submission in submissions:
         try:
-            article: Article = Article(submission.url)
-            article.download()
-            article.parse()
-            article_body: str = article.text
-            generated_summary: str = summarizer.summarize(article_body)
-            formatted_summary: str = comment_format(generated_summary)
-            logging.info(f"Article title: {article.title}")
-            logging.info(f"Summary:\n{comment_format(formatted_summary)}")
+            # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
+            url: str = submission.url
+            domain: str = urlparse(url).netloc
+            scheme: str = urlparse(url).scheme
+            robots_txt_url: str = f"{scheme}://{domain}/robots.txt"
+            robot_file_parser: RobotFileParser = RobotFileParser(robots_txt_url)
+            robot_file_parser.read()
 
-            # submit the comment!
-            submission.reply(formatted_summary)
+            if robot_file_parser.can_fetch("/u/IfYourTimeIsShort", url): # if crawling is allowed...
+                logging.debug(f"{robots_txt_url} allows parsing of {url}")
+                
+                # retrieve the text content of the article
+                article: Article = Article(url)
+                article.download()
+                article.parse()
+                article_body: str = article.text
+                
+                # generate a summary from the extracted article text
+                generated_summary: str = summarizer.summarize(article_body)
+                
+                # format the generated summary into something more visually appealing
+                formatted_summary: str = comment_format(generated_summary)
+                logging.info(f"Article title: {article.title}")
+                logging.info(f"Summary:\n{comment_format(formatted_summary)}")
+
+                # submit the comment!
+                submission.reply(formatted_summary)
+            else:
+                logging.debug(f"{robots_txt_url} prohibits parsing of {url}")
 
         except NotImplementedError as e:
             logging.warning(f"{submission.url} is not parseable at this time")
