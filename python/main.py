@@ -1,10 +1,10 @@
+import configparser
 import logging
 
 import nltk.data
 from GPTSummarizer import GPTSummarizer
-from praw import Reddit
-from Settings import Settings
 from newspaper import Article
+from praw import Reddit
 
 
 def comment_format(raw_summary: str) -> str:
@@ -53,31 +53,31 @@ def main() -> None:
     # initialize logger
     logging_config()
 
-    # retrieve settings
-    settings_file_name: str = "settings.json"
-    settings: Settings = Settings()
-    settings.load_settings(settings_file_name)
-    logging.info(f"{settings_file_name} loaded")
+    # retrieve config
+    config_file_name: str = "config.ini"
+    config: configparser.ConfigParser = configparser.ConfigParser(allow_no_value=True)
+    config.read(config_file_name)
+    logging.info(f"{config_file_name} loaded")
 
     # initialize Reddit instance
     reddit: Reddit = Reddit(
-        client_id=settings["reddit"]["client_id"], 
-        client_secret=settings["reddit"]["secret"], 
-        user_agent=settings["reddit"]["user_agent"],
-        username=settings["reddit"]["username"], 
-        password=settings["reddit"]["password"]
+        client_id=config.get("reddit.credentials", "client_id"),
+        client_secret=config.get("reddit.credentials", "client_secret"), 
+        user_agent=config.get("reddit.credentials", "user_agent"),
+        username=config.get("reddit.credentials", "username"), 
+        password=config.get("reddit.credentials", "password"),
     )
 
     logging.info('Reddit instance initialized')
 
-    subreddit_names: list[str] = settings["reddit"]["subreddits"]
+    subreddit_names: list[str] = config.get("reddit.submissions", "subreddits").split(",")
 
     urls: list[str] = []
     for subreddit_name in subreddit_names:
         subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
 
-        post_sort: str = settings["reddit"]["post_sort"]
-        post_limit: int = settings["reddit"]["post_limit"]
+        post_sort: str = config.get("reddit.submissions", "post_sort")
+        post_limit: int = config.getint("reddit.submissions", "post_limit")
 
         generated: str = f"subreddit.{post_sort}(limit={post_limit})"
         logging.debug(f"Generated code: `{generated}`")
@@ -85,7 +85,7 @@ def main() -> None:
         # run generated code
         submissions = list(eval(generated)) # get the top n posts at the time according the given sort
     
-    summarizer: GPTSummarizer = GPTSummarizer(settings["OPENAI_API_KEY"])
+    summarizer: GPTSummarizer = GPTSummarizer(config.get("openai", "API_Key"))
     for submission in submissions:
         try:
             article: Article = Article(submission.url)
