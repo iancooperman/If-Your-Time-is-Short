@@ -191,3 +191,5 @@ poetry.toml
 .ionide
 
 settings.json
+
+*.ini
