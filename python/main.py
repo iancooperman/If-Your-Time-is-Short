@@ -58,7 +58,7 @@ def main() -> None:
     # retrieve config
     config_file_name: str = "config.ini"
     config: configparser.ConfigParser = configparser.ConfigParser(allow_no_value=True)
-    config.read(config_file_name)
+    config.read("../" + config_file_name)
     logging.info(f"{config_file_name} loaded")
 
     # initialize Reddit instance
