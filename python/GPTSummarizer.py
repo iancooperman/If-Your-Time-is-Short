@@ -3,6 +3,7 @@ from pathlib import Path
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse
 from newspaper import Article
+from newspaper.article import ArticleException
 import logging
 import configparser
 
@@ -21,7 +22,7 @@ class GPTSummarizer:
         
     def summarize(self, text: str) -> str:
         prompt = self.prompt + text
-        completion = openai.ChatCompletion.create(
+        response = openai.ChatCompletion.create(
             model=self.model,
             messages=[
                 {"role": "system", "content": self.prompt},
@@ -29,8 +30,8 @@ class GPTSummarizer:
                 {"role": "user", "content": text}
             ]
         )
-        logging.debug(completion)
-        return completion.choices[0]["message"]["content"] # type: ignore
+        logging.debug(response)
+        return response["choices"][0]["message"]["content"] # type: ignore
     
     def url_to_summary(self, url: str) -> str | None:
         # parse the url and ensure that the site's robots.txt allows crawling on the url
@@ -57,8 +58,9 @@ class GPTSummarizer:
             else:
                 logging.debug(f"{robots_txt_url} prohibits parsing of {url}")
 
-        except NotImplementedError as e:
+        except (NotImplementedError,  ArticleException) as e:
             logging.warning(f"{url} is not parseable at this time")
+            logging.warning(e)
 
         return None # mypy was yelling at me for not putting this
  
@@ -68,6 +70,6 @@ if __name__ == "__main__":
     config.read("./" + "config.ini")
 
     summarizer = GPTSummarizer(config.get("openai", "api_key"))
-    summary = summarizer.url_to_summary("https://www.ctinsider.com/columnist/article/house-built-on-fairfield-lot-18261063.php")
+    summary = summarizer.url_to_summary("https://www.iflscience.com/the-worlds-largest-wind-turbine-has-been-switched-on-70047")
     print(summary)
 
