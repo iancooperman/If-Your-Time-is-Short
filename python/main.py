@@ -1,5 +1,7 @@
 import configparser
 import logging
+import sqlite3
+import time
 
 from GPTSummarizer import GPTSummarizer
 from praw import Reddit
@@ -36,6 +38,12 @@ def reddit_init() -> Reddit:
 
     return reddit
 
+def db_init() -> sqlite3.Cursor:
+    connection: sqlite3.Connection = sqlite3.connect("iytis.db")
+    cursor: sqlite3.Cursor = connection.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS replied_to_posts (post_id VARCHAR PRIMARY KEY)")
+
+    return cursor
 
 def main() -> None:
     # initialize logger
@@ -44,8 +52,15 @@ def main() -> None:
     reddit: Reddit = reddit_init()
     logging.info('Reddit instance initialized')
 
+    db = db_init()
+
     subreddit_names: list[str] = config.get("reddit.submissions", "subreddits").split(",")
 
+    # time in seconds before refreshing the posts
+    refresh_delay: float = float(config.get("reddit.submissions", "refresh_delay"))
+
+    # mainloop
+    while True:
         urls: list[str] = []
         for subreddit_name in subreddit_names:
             subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
