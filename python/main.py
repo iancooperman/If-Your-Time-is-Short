@@ -12,6 +12,7 @@ config.read("../" + config_file_name)
 logging.info(f"{config_file_name} loaded")
 summarizer = GPTSummarizer(config.get("openai", "API_Key"))
 
+
 def comment_format(raw_summary: str) -> str:
     # build the comment piece by piece
     comment = "If your time is short:\n"
@@ -40,42 +41,39 @@ def main() -> None:
     # initialize logger
     logging_config()
 
-    
-
     reddit: Reddit = reddit_init()
     logging.info('Reddit instance initialized')
 
     subreddit_names: list[str] = config.get("reddit.submissions", "subreddits").split(",")
 
-    urls: list[str] = []
-    for subreddit_name in subreddit_names:
-        subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
+        urls: list[str] = []
+        for subreddit_name in subreddit_names:
+            subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
 
-        post_sort: str = config.get("reddit.submissions", "post_sort")
-        post_limit: int = config.getint("reddit.submissions", "post_limit")
+            post_sort: str = config.get("reddit.submissions", "post_sort")
+            post_limit: int = config.getint("reddit.submissions", "post_limit")
 
-        generated: str = f"subreddit.{post_sort}(limit={post_limit})"
-        logging.debug(f"Generated code: `{generated}`")
+            generated: str = f"subreddit.{post_sort}(limit={post_limit})"
+            logging.debug(f"Generated code: `{generated}`")
 
-        # run generated code
-        submissions = list(eval(generated)) # get the top n posts at the time according the given sort
-    
-    summarizer: GPTSummarizer = GPTSummarizer(config.get("openai", "API_Key"))
-    for submission in submissions:
-        # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
-            url: str = submission.url
-            generated_summary: str = url_to_summary(url)
-            
-            # format the generated summary into something more visually appealing
-            formatted_summary: str = comment_format(generated_summary)
-            
-            logging.info(f"Summary:\n{comment_format(formatted_summary)}")
+            # run generated code
+            # TODO: using eval is a terrible idea
+            submissions = list(eval(generated)) # get the top n posts at the time according the given sort
+        
+        for submission in submissions:
+            # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
+                url: str = submission.url
+                generated_summary: str = summarizer.url_to_summary(url) #type: ignore
+                
+                # format the generated summary into something more visually appealing
+                formatted_summary: str = comment_format(generated_summary)
+                
+                logging.info(f"Summary:\n{comment_format(formatted_summary)}")
 
-            # submit the comment!
-            submission.reply(formatted_summary)
-            
+                # submit the comment!
+                submission.reply(formatted_summary)
 
-
+        time.sleep(refresh_delay)
 
 if __name__ == "__main__":
     main()
