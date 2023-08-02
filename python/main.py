@@ -1,7 +1,6 @@
 import configparser
 import logging
 
-import nltk.data
 from GPTSummarizer import GPTSummarizer
 from praw import Reddit
 from util import *
@@ -17,23 +16,12 @@ def comment_format(raw_summary: str) -> str:
     # build the comment piece by piece
     comment = "If your time is short:\n"
     comment += "\n"
-    
-    # core summary formatting
-    raw_summary = raw_summary.strip()
-    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-    summary_sentences = tokenizer.tokenize(raw_summary)
-
-    for i in range(len(summary_sentences)): 
-        comment += "* " + summary_sentences[i] + "\n" # add a tab and a markdown bullet point to the front of each sentence
-        comment += "\n"
-
+    comment += raw_summary
     comment += "----------------------------------------------------------------\n"
     comment += "\n"
     comment += "I am a bot in training. Please feel free to DM me any feedback you have."
 
-
     return comment
-
 
 def reddit_init() -> Reddit:
     # initialize Reddit instance
