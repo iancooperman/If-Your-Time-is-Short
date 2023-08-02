@@ -3,20 +3,21 @@ import logging
 
 import nltk.data
 from GPTSummarizer import GPTSummarizer
-from newspaper import Article
 from praw import Reddit
-from urllib.robotparser import RobotFileParser
-from urllib.parse import urlparse
+from util import *
 
+# globals
+config_file_name: str = "config.ini"
+config: configparser.ConfigParser = configparser.ConfigParser(allow_no_value=True)
+config.read("../" + config_file_name)
+logging.info(f"{config_file_name} loaded")
+summarizer = GPTSummarizer(config.get("openai", "API_Key"))
 
 def comment_format(raw_summary: str) -> str:
-    
     # build the comment piece by piece
     comment = "If your time is short:\n"
     comment += "\n"
     
-
-
     # core summary formatting
     raw_summary = raw_summary.strip()
     tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
@@ -33,34 +34,8 @@ def comment_format(raw_summary: str) -> str:
 
     return comment
 
-def logging_config() -> None:
 
-    log: logging.Logger = logging.getLogger()
-    log.setLevel(logging.DEBUG)
-
-    formatter: logging.Formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
-
-    fh: logging.FileHandler = logging.FileHandler('iytis.log', mode='w', encoding='utf-8')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)    
-    log.addHandler(fh)
-
-    ch: logging.StreamHandler = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    log.addHandler(ch)
-
-
-def main() -> None:
-    # initialize logger
-    logging_config()
-
-    # retrieve config
-    config_file_name: str = "config.ini"
-    config: configparser.ConfigParser = configparser.ConfigParser(allow_no_value=True)
-    config.read("../" + config_file_name)
-    logging.info(f"{config_file_name} loaded")
-
+def reddit_init() -> Reddit:
     # initialize Reddit instance
     reddit: Reddit = Reddit(
         client_id=config.get("reddit.credentials", "client_id"),
@@ -70,6 +45,16 @@ def main() -> None:
         password=config.get("reddit.credentials", "password"),
     )
 
+    return reddit
+
+
+def main() -> None:
+    # initialize logger
+    logging_config()
+
+    
+
+    reddit: Reddit = reddit_init()
     logging.info('Reddit instance initialized')
 
     subreddit_names: list[str] = config.get("reddit.submissions", "subreddits").split(",")
@@ -89,39 +74,18 @@ def main() -> None:
     
     summarizer: GPTSummarizer = GPTSummarizer(config.get("openai", "API_Key"))
     for submission in submissions:
-        try:
-            # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
+        # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
             url: str = submission.url
-            domain: str = urlparse(url).netloc
-            scheme: str = urlparse(url).scheme
-            robots_txt_url: str = f"{scheme}://{domain}/robots.txt"
-            robot_file_parser: RobotFileParser = RobotFileParser(robots_txt_url)
-            robot_file_parser.read()
+            generated_summary: str = url_to_summary(url)
+            
+            # format the generated summary into something more visually appealing
+            formatted_summary: str = comment_format(generated_summary)
+            
+            logging.info(f"Summary:\n{comment_format(formatted_summary)}")
 
-            if robot_file_parser.can_fetch("/u/IfYourTimeIsShort", url): # if crawling is allowed...
-                logging.debug(f"{robots_txt_url} allows parsing of {url}")
-                
-                # retrieve the text content of the article
-                article: Article = Article(url)
-                article.download()
-                article.parse()
-                article_body: str = article.text
-                
-                # generate a summary from the extracted article text
-                generated_summary: str = summarizer.summarize(article_body)
-                
-                # format the generated summary into something more visually appealing
-                formatted_summary: str = comment_format(generated_summary)
-                logging.info(f"Article title: {article.title}")
-                logging.info(f"Summary:\n{comment_format(formatted_summary)}")
-
-                # submit the comment!
-                submission.reply(formatted_summary)
-            else:
-                logging.debug(f"{robots_txt_url} prohibits parsing of {url}")
-
-        except NotImplementedError as e:
-            logging.warning(f"{submission.url} is not parseable at this time")
+            # submit the comment!
+            submission.reply(formatted_summary)
+            
 
 
 
