@@ -3,6 +3,7 @@ import logging
 import sqlite3
 import time
 
+import praw
 from GPTSummarizer import GPTSummarizer
 from praw import Reddit
 from util import *
@@ -10,7 +11,7 @@ from util import *
 # globals
 config_file_name: str = "config.ini"
 config: configparser.ConfigParser = configparser.ConfigParser(allow_no_value=True)
-config.read("../" + config_file_name)
+config.read(config_file_name)
 logging.info(f"{config_file_name} loaded")
 summarizer = GPTSummarizer(config.get("openai", "API_Key"))
 
@@ -41,7 +42,7 @@ def reddit_init() -> Reddit:
 def db_init() -> sqlite3.Cursor:
     connection: sqlite3.Connection = sqlite3.connect("iytis.db")
     cursor: sqlite3.Cursor = connection.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS replied_to_posts (post_id VARCHAR PRIMARY KEY)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS submissions (id TEXT PRIMARY KEY)")
 
     return cursor
 
@@ -73,22 +74,31 @@ def main() -> None:
 
             # run generated code
             # TODO: using eval is a terrible idea
-            submissions = list(eval(generated)) # get the top n posts at the time according the given sort
+            submissions: list[praw.models.Submission] = list(eval(generated)) # get the top n posts at the time according the given sort
         
         for submission in submissions:
+            db.execute(f"SELECT * FROM submissions WHERE id = '{submission.id}'")
+            if db.fetchone():
+                continue
+            else:
+                db.execute(f"INSERT INTO submissions VALUES ('{submission.id}')")
+            
+            
             # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
                 url: str = submission.url
                 generated_summary: str = summarizer.url_to_summary(url) #type: ignore
-                
-                # format the generated summary into something more visually appealing
-                formatted_summary: str = comment_format(generated_summary)
-                
-                logging.info(f"Summary:\n{comment_format(formatted_summary)}")
 
-                # submit the comment!
-                submission.reply(formatted_summary)
+                # format the generated summary into something more visually appealing
+                if generated_summary:
+                    formatted_summary: str = comment_format(generated_summary)
+                
+                    logging.info(f"Summary:\n{formatted_summary}")
+
+                    # submit the comment!
+                    submission.reply(formatted_summary)
 
         time.sleep(refresh_delay)
+        logging.info(f"Halting for {refresh_delay} {'seconds' if refresh_delay != 1 else 'second'}.")
 
 if __name__ == "__main__":
     main()

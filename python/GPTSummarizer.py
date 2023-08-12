@@ -59,7 +59,7 @@ class GPTSummarizer:
             else:
                 logging.debug(f"{robots_txt_url} prohibits parsing of {url}")
 
-        except (NotImplementedError,  ArticleException) as e:
+        except Exception as e:
             logging.warning(f"{url} is not parseable at this time")
             logging.warning(e)
 
