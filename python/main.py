@@ -21,6 +21,7 @@ def comment_format(raw_summary: str) -> str:
     comment = "If your time is short:\n"
     comment += "\n"
     comment += raw_summary
+    comment += "\n"
     comment += "----------------------------------------------------------------\n"
     comment += "\n"
     comment += "I am a bot in training. Please feel free to DM me any feedback you have."
@@ -85,17 +86,17 @@ def main() -> None:
             
             
             # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
-                url: str = submission.url
-                generated_summary: str = summarizer.url_to_summary(url) #type: ignore
+            url: str = submission.url
+            generated_summary: str = summarizer.url_to_summary(url) #type: ignore
 
-                # format the generated summary into something more visually appealing
-                if generated_summary:
-                    formatted_summary: str = comment_format(generated_summary)
-                
-                    logging.info(f"Summary:\n{formatted_summary}")
+            # format the generated summary into something more visually appealing
+            if generated_summary:
+                formatted_summary: str = comment_format(generated_summary)
+            
+                logging.info(f"Summary:\n{formatted_summary}")
 
-                    # submit the comment!
-                    submission.reply(formatted_summary)
+                # submit the comment!
+                submission.reply(formatted_summary)
 
         time.sleep(refresh_delay)
         logging.info(f"Halting for {refresh_delay} {'seconds' if refresh_delay != 1 else 'second'}.")
