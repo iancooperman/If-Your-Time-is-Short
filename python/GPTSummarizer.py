@@ -20,7 +20,10 @@ class GPTSummarizer:
         # example text sourced from https://www.politifact.com/factchecks/2023/jul/24/kamala-harris/do-Florida-school-standards-say-enslaved-people/
         self.example = '- The Florida Board of Education set new social studies standards for middle schoolers July 19.\n- In a section about the duties and trades performed by enslaved people, the state adopted a clarification that said "instruction includes how slaves developed skills which, in some instances, could be applied for their personal benefit.\n- Experts on Black history said that such language is factually misleading and offensive."'
         
-    def summarize(self, text: str) -> str:
+    def summarize(self, text: str) -> (str | None):
+        if len(text) <= 600: # if the given text is already short enough to be considered a summary, then there is no point in summarizing it.
+            return None
+
         response = openai.ChatCompletion.create(
             model=self.model,
             messages=[
@@ -54,12 +57,12 @@ class GPTSummarizer:
                 article_body: str = article.text
                 
                 # generate a summary from the extracted article text
-                generated_summary: str = self.summarize(article_body)
+                generated_summary: str | None = self.summarize(article_body)
                 return generated_summary
             else:
                 logging.debug(f"{robots_txt_url} prohibits parsing of {url}")
 
-        except (NotImplementedError,  ArticleException) as e:
+        except Exception as e:
             logging.warning(f"{url} is not parseable at this time")
             logging.warning(e)
 

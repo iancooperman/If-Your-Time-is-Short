@@ -193,3 +193,7 @@ poetry.toml
 settings.json
 
 *.ini
+
+*.db
+
+*.db-journal

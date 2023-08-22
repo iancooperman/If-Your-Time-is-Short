@@ -1,66 +1,34 @@
 import configparser
 import logging
+import sqlite3
+import time
 
-import nltk.data
+import praw
 from GPTSummarizer import GPTSummarizer
-from newspaper import Article
 from praw import Reddit
-from urllib.robotparser import RobotFileParser
-from urllib.parse import urlparse
+from util import *
+
+# globals
+config_file_name: str = "config.ini"
+config: configparser.ConfigParser = configparser.ConfigParser(allow_no_value=True)
+config.read(config_file_name)
+logging.info(f"{config_file_name} loaded")
+summarizer = GPTSummarizer(config.get("openai", "API_Key"))
 
 
 def comment_format(raw_summary: str) -> str:
-    
     # build the comment piece by piece
     comment = "If your time is short:\n"
     comment += "\n"
-    
-
-
-    # core summary formatting
-    raw_summary = raw_summary.strip()
-    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-    summary_sentences = tokenizer.tokenize(raw_summary)
-
-    for i in range(len(summary_sentences)): 
-        comment += "* " + summary_sentences[i] + "\n" # add a tab and a markdown bullet point to the front of each sentence
-        comment += "\n"
-
+    comment += raw_summary
+    comment += "\n"
     comment += "----------------------------------------------------------------\n"
     comment += "\n"
     comment += "I am a bot in training. Please feel free to DM me any feedback you have."
 
-
     return comment
 
-def logging_config() -> None:
-
-    log: logging.Logger = logging.getLogger()
-    log.setLevel(logging.DEBUG)
-
-    formatter: logging.Formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
-
-    fh: logging.FileHandler = logging.FileHandler('iytis.log', mode='w', encoding='utf-8')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)    
-    log.addHandler(fh)
-
-    ch: logging.StreamHandler = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    log.addHandler(ch)
-
-
-def main() -> None:
-    # initialize logger
-    logging_config()
-
-    # retrieve config
-    config_file_name: str = "config.ini"
-    config: configparser.ConfigParser = configparser.ConfigParser(allow_no_value=True)
-    config.read("../" + config_file_name)
-    logging.info(f"{config_file_name} loaded")
-
+def reddit_init() -> Reddit:
     # initialize Reddit instance
     reddit: Reddit = Reddit(
         client_id=config.get("reddit.credentials", "client_id"),
@@ -70,60 +38,74 @@ def main() -> None:
         password=config.get("reddit.credentials", "password"),
     )
 
+    return reddit
+
+def db_init() -> sqlite3.Connection:
+    connection: sqlite3.Connection = sqlite3.connect("iytis.db")
+    cursor: sqlite3.Cursor = connection.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS submissions (id TEXT PRIMARY KEY)")
+    connection.commit()
+
+    return connection
+
+def main() -> None:
+    # initialize logger
+    logging_config()
+
+    reddit: Reddit = reddit_init()
     logging.info('Reddit instance initialized')
+
+    db_conn = db_init()
+    logging.info("DB connection established")
 
     subreddit_names: list[str] = config.get("reddit.submissions", "subreddits").split(",")
 
-    urls: list[str] = []
-    for subreddit_name in subreddit_names:
-        subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
+    # time in seconds before refreshing the posts
+    subreddit_refresh_delay: float = float(config.get("reddit.submissions", "refresh_delay"))
 
-        post_sort: str = config.get("reddit.submissions", "post_sort")
-        post_limit: int = config.getint("reddit.submissions", "post_limit")
+    # mainloop
+    done: bool = False
+    while not done:
+        submissiion_urls: list[str] = []
+        for subreddit_name in subreddit_names:
+            subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
 
-        generated: str = f"subreddit.{post_sort}(limit={post_limit})"
-        logging.debug(f"Generated code: `{generated}`")
+            submission_sort: str = config.get("reddit.submissions", "post_sort")
+            submission_limit: int = config.getint("reddit.submissions", "post_limit")
 
-        # run generated code
-        submissions = list(eval(generated)) # get the top n posts at the time according the given sort
-    
-    summarizer: GPTSummarizer = GPTSummarizer(config.get("openai", "API_Key"))
-    for submission in submissions:
-        try:
+            generated_code_for_submission_generator_creation: str = f"subreddit.{submission_sort}(limit={submission_limit})"
+            logging.debug(f"Generated code: `{generated_code_for_submission_generator_creation}`")
+
+            # run generated code
+            # TODO: using eval is a terrible idea
+            submissions: list[praw.models.Submission] = list(eval(generated_code_for_submission_generator_creation)) # get the top n posts at the time according the given sort
+        
+        for submission in submissions:
+            db_cursor = db_conn.cursor()
+            db_cursor.execute(f"SELECT * FROM submissions WHERE id = '{submission.id}'")
+            submission_already_seen: bool = db_cursor.fetchone()
+            if submission_already_seen:
+                continue
+            else:
+                db_cursor.execute(f"INSERT INTO submissions VALUES ('{submission.id}')")
+                db_conn.commit()
+            
+            
             # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
-            url: str = submission.url
-            domain: str = urlparse(url).netloc
-            scheme: str = urlparse(url).scheme
-            robots_txt_url: str = f"{scheme}://{domain}/robots.txt"
-            robot_file_parser: RobotFileParser = RobotFileParser(robots_txt_url)
-            robot_file_parser.read()
+            submission_url: str = submission.url
+            generated_submission_summary: str = summarizer.url_to_summary(submission_url) #type: ignore
 
-            if robot_file_parser.can_fetch("/u/IfYourTimeIsShort", url): # if crawling is allowed...
-                logging.debug(f"{robots_txt_url} allows parsing of {url}")
-                
-                # retrieve the text content of the article
-                article: Article = Article(url)
-                article.download()
-                article.parse()
-                article_body: str = article.text
-                
-                # generate a summary from the extracted article text
-                generated_summary: str = summarizer.summarize(article_body)
-                
-                # format the generated summary into something more visually appealing
-                formatted_summary: str = comment_format(generated_summary)
-                logging.info(f"Article title: {article.title}")
-                logging.info(f"Summary:\n{comment_format(formatted_summary)}")
+            # format the generated summary into something more visually appealing
+            if generated_submission_summary:
+                formatted_submission_summary: str = comment_format(generated_submission_summary)
+            
+                logging.info(f"Summary:\n{formatted_submission_summary}")
 
                 # submit the comment!
-                submission.reply(formatted_summary)
-            else:
-                logging.debug(f"{robots_txt_url} prohibits parsing of {url}")
+                submission.reply(formatted_submission_summary)
 
-        except NotImplementedError as e:
-            logging.warning(f"{submission.url} is not parseable at this time")
-
-
+        logging.info(f"Halting for {subreddit_refresh_delay} {'seconds' if subreddit_refresh_delay != 1 else 'second'}.")
+        time.sleep(subreddit_refresh_delay)
 
 if __name__ == "__main__":
     main()
