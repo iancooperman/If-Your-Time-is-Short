@@ -195,3 +195,5 @@ settings.json
 *.ini
 
 *.db
+
+*.db-journal

@@ -40,12 +40,13 @@ def reddit_init() -> Reddit:
 
     return reddit
 
-def db_init() -> sqlite3.Cursor:
+def db_init() -> sqlite3.Connection:
     connection: sqlite3.Connection = sqlite3.connect("iytis.db")
     cursor: sqlite3.Cursor = connection.cursor()
     cursor.execute("CREATE TABLE IF NOT EXISTS submissions (id TEXT PRIMARY KEY)")
+    connection.commit()
 
-    return cursor
+    return connection
 
 def main() -> None:
     # initialize logger
@@ -54,52 +55,57 @@ def main() -> None:
     reddit: Reddit = reddit_init()
     logging.info('Reddit instance initialized')
 
-    db = db_init()
+    db_conn = db_init()
+    logging.info("DB connection established")
 
     subreddit_names: list[str] = config.get("reddit.submissions", "subreddits").split(",")
 
     # time in seconds before refreshing the posts
-    refresh_delay: float = float(config.get("reddit.submissions", "refresh_delay"))
+    subreddit_refresh_delay: float = float(config.get("reddit.submissions", "refresh_delay"))
 
     # mainloop
-    while True:
-        urls: list[str] = []
+    done: bool = False
+    while not done:
+        submissiion_urls: list[str] = []
         for subreddit_name in subreddit_names:
             subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
 
-            post_sort: str = config.get("reddit.submissions", "post_sort")
-            post_limit: int = config.getint("reddit.submissions", "post_limit")
+            submission_sort: str = config.get("reddit.submissions", "post_sort")
+            submission_limit: int = config.getint("reddit.submissions", "post_limit")
 
-            generated: str = f"subreddit.{post_sort}(limit={post_limit})"
-            logging.debug(f"Generated code: `{generated}`")
+            generated_code_for_submission_generator_creation: str = f"subreddit.{submission_sort}(limit={submission_limit})"
+            logging.debug(f"Generated code: `{generated_code_for_submission_generator_creation}`")
 
             # run generated code
             # TODO: using eval is a terrible idea
-            submissions: list[praw.models.Submission] = list(eval(generated)) # get the top n posts at the time according the given sort
+            submissions: list[praw.models.Submission] = list(eval(generated_code_for_submission_generator_creation)) # get the top n posts at the time according the given sort
         
         for submission in submissions:
-            db.execute(f"SELECT * FROM submissions WHERE id = '{submission.id}'")
-            if db.fetchone():
+            db_cursor = db_conn.cursor()
+            db_cursor.execute(f"SELECT * FROM submissions WHERE id = '{submission.id}'")
+            submission_already_seen: bool = db_cursor.fetchone()
+            if submission_already_seen:
                 continue
             else:
-                db.execute(f"INSERT INTO submissions VALUES ('{submission.id}')")
+                db_cursor.execute(f"INSERT INTO submissions VALUES ('{submission.id}')")
+                db_conn.commit()
             
             
             # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
-            url: str = submission.url
-            generated_summary: str = summarizer.url_to_summary(url) #type: ignore
+            submission_url: str = submission.url
+            generated_submission_summary: str = summarizer.url_to_summary(submission_url) #type: ignore
 
             # format the generated summary into something more visually appealing
-            if generated_summary:
-                formatted_summary: str = comment_format(generated_summary)
+            if generated_submission_summary:
+                formatted_submission_summary: str = comment_format(generated_submission_summary)
             
-                logging.info(f"Summary:\n{formatted_summary}")
+                logging.info(f"Summary:\n{formatted_submission_summary}")
 
                 # submit the comment!
-                submission.reply(formatted_summary)
+                submission.reply(formatted_submission_summary)
 
-        time.sleep(refresh_delay)
-        logging.info(f"Halting for {refresh_delay} {'seconds' if refresh_delay != 1 else 'second'}.")
+        logging.info(f"Halting for {subreddit_refresh_delay} {'seconds' if subreddit_refresh_delay != 1 else 'second'}.")
+        time.sleep(subreddit_refresh_delay)
 
 if __name__ == "__main__":
     main()
