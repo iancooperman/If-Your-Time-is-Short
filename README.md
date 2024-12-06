@@ -6,7 +6,7 @@ Not just any Reddit summarizer bot.
 
 Let's face it, hardly anyone reads past the headline these days, especially not Redditors. I can't force anyone to start, but I can provide the next best thing: summaries! If Your Time Is Short is a Reddit bot that peruses /r/nottheonion, /r/offbeat, and other subreddits for rising posts linking to news articles and uses GPT-3-Turbo (only as advanced a model as needed) to reply to the post with a concise, bullet-pointed summary of the article's contents.
 
-Checkout out [/u/IfYourTimeIsShort](https://www.reddit.com/user/IfYourTimeIsShort/)'s latest replies!
+Check out [/u/IfYourTimeIsShort](https://www.reddit.com/user/IfYourTimeIsShort/)'s latest replies!
 
 ## Getting Started
 
