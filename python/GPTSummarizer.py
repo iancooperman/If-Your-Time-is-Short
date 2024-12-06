@@ -6,6 +6,7 @@ from urllib.robotparser import RobotFileParser
 
 import openai
 from newspaper import Article
+from newspaper import Config
 from newspaper.article import ArticleException
 from util import *
 
@@ -19,6 +20,9 @@ class GPTSummarizer:
         self.prompt = 'You will be given the complete text of an online news article. Please summarize the article in exactly 3 bullet points, one single, complete, non-run-on sentence per bullet. Output in markdown.'
         # example text sourced from https://www.politifact.com/factchecks/2023/jul/24/kamala-harris/do-Florida-school-standards-say-enslaved-people/
         self.example = '- The Florida Board of Education set new social studies standards for middle schoolers July 19.\n- In a section about the duties and trades performed by enslaved people, the state adopted a clarification that said "instruction includes how slaves developed skills which, in some instances, could be applied for their personal benefit.\n- Experts on Black history said that such language is factually misleading and offensive."'
+
+        self._newspaper_config = Config()
+        self._newspaper_config.browser_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
         
     def summarize(self, text: str) -> (str | None):
         if len(text) <= 600: # if the given text is already short enough to be considered a summary, then there is no point in summarizing it.
@@ -46,11 +50,11 @@ class GPTSummarizer:
             robot_file_parser.set_url(robots_txt_url)
             robot_file_parser.read()
 
-            if robot_file_parser.can_fetch("*", url): # if crawling is allowed...
-                logging.debug(f"{robots_txt_url} allows parsing of {url}")
+            if robot_file_parser.can_fetch(self._newspaper_config.browser_user_agent, url): # if crawling is allowed...
+                logging.debug(f"{robots_txt_url} allows parsing of {url} by user agent {self._newspaper_config.browser_user_agent}")
                 
                 # retrieve the text content of the article
-                article: Article = Article(url)
+                article: Article = Article(url, config=self._newspaper_config)
                 article.download()
                 article.parse()
                 logging.info(f"Article title: {article.title}")
@@ -60,7 +64,7 @@ class GPTSummarizer:
                 generated_summary: str | None = self.summarize(article_body)
                 return generated_summary
             else:
-                logging.debug(f"{robots_txt_url} prohibits parsing of {url}")
+                logging.debug(f"{robots_txt_url} prohibits parsing of {url} by user agent {self._newspaper_config.browser_user_agent}")
 
         except Exception as e:
             logging.warning(f"{url} is not parseable at this time")

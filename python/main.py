@@ -24,7 +24,7 @@ def comment_format(raw_summary: str) -> str:
     comment += "\n"
     comment += "----------------------------------------------------------------\n"
     comment += "\n"
-    comment += "I am a bot in training. Please feel free to DM me any feedback you have."
+    comment += "I am a bot in training. Please feel free to DM any feedback you have to my creator, /u/BananaZen314159."
 
     return comment
 
