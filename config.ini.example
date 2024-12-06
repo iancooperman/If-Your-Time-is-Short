@@ -1,0 +1,18 @@
+[openai]
+API_Key=sk-openaiapikeyalsdjgfhalsdghjasldfghj
+
+[reddit.credentials]
+client_id=providedByReddit
+client_secret=providedByRedditShhhh
+username=PutUserNameHere
+password=PutRedditPasswordHere
+user_agent=IfYourTimeIsShort v0.1 by /u/BananaZen314159
+
+[reddit.submissions]
+subreddits=commaseparated,listofsubreddits,here
+post_sort=rising
+post_limit=1
+refresh_delay=30
+
+[domain_blacklist]
+www.reddit.com
