@@ -8,6 +8,7 @@ import praw
 from GPTSummarizer import GPTSummarizer
 from praw import Reddit
 from util import *
+from SubmissionDB import SubmissionDB
 
 # globals
 config: configparser.ConfigParser = None
@@ -45,13 +46,13 @@ def reddit_init() -> Reddit:
 
     return reddit
 
-def db_init() -> sqlite3.Connection:
-    connection: sqlite3.Connection = sqlite3.connect("iytis.db")
-    cursor: sqlite3.Cursor = connection.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS submissions (id TEXT PRIMARY KEY)")
-    connection.commit()
+# def db_init() -> sqlite3.Connection:
+#     connection: sqlite3.Connection = sqlite3.connect("iytis.db")
+#     cursor: sqlite3.Cursor = connection.cursor()
+#     cursor.execute("CREATE TABLE IF NOT EXISTS submissions (id TEXT PRIMARY KEY)")
+#     connection.commit()
 
-    return connection
+#     return connection
 
 def main() -> None:
     # parse command line arguments
@@ -75,8 +76,9 @@ def main() -> None:
     reddit: Reddit = reddit_init()
     logging.info('Reddit instance initialized')
 
-    db_conn = db_init()
-    logging.info("DB connection established")
+    # db_conn = db_init()
+    iytis_db: SubmissionDB = SubmissionDB('iytis.db')
+    
 
     subreddit_names: list[str] = config.get("reddit.submissions", "subreddits").split(",")
     logging.info(f"Subreddits to monitor: {', '.join(subreddit_names)}")
@@ -118,14 +120,16 @@ def main() -> None:
             logging.info(f"Sorting by {submission_sort}")
         
             for submission in submissions:
-                db_cursor = db_conn.cursor()
-                db_cursor.execute(f"SELECT * FROM submissions WHERE id = '{submission.id}'")
-                submission_already_seen: bool = db_cursor.fetchone()
+                # db_cursor = db_conn.cursor()
+                # db_cursor.execute(f"SELECT * FROM submissions WHERE id = '{submission.id}'")
+                # submission_already_seen: bool = db_cursor.fetchone()
+                submission_already_seen: bool = iytis_db.submission_present(submission.id)
                 if submission_already_seen:
                     continue
                 else:
-                    db_cursor.execute(f"INSERT INTO submissions VALUES ('{submission.id}')")
-                    db_conn.commit()
+                    # db_cursor.execute(f"INSERT INTO submissions VALUES ('{submission.id}')")
+                    # db_conn.commit()
+                    iytis_db.insert_submission(submission.id)
                 
                 # parse the submission's url and ensure that the site's robots.txt allows crawling on the url
                 submission_url: str = submission.url
