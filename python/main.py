@@ -13,13 +13,14 @@ from SubmissionDB import SubmissionDB
 # globals
 config: configparser.ConfigParser = None
 summarizer: GPTSummarizer = None
+logger: logging.Logger = None
 
 # utility function for loading the settings from a config file
 def load_config(config_file_name: str = "config.ini"): # default file name is 'config.ini'
     global config
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(config_file_name)
-    logging.info(f"{config_file_name} loaded")
+    logger.info(f"{config_file_name} loaded")
 
 
 def comment_format(raw_summary: str) -> str:
@@ -55,6 +56,10 @@ def reddit_init() -> Reddit:
 #     return connection
 
 def main() -> None:
+    # initialize logger
+    global logger
+    logger = logger_init()
+
     # parse command line arguments
     argv: list[str] = sys.argv
 
@@ -66,22 +71,18 @@ def main() -> None:
 
     load_config(config_file_name)
 
-
-    # initialize logger
-    logging_config()
-
     global summarizer
     summarizer = GPTSummarizer(config.get("openai", "API_Key"))
 
     reddit: Reddit = reddit_init()
-    logging.info('Reddit instance initialized')
+    logger.info('Reddit instance initialized')
 
     # db_conn = db_init()
     iytis_db: SubmissionDB = SubmissionDB('iytis.db')
     
 
     subreddit_names: list[str] = config.get("reddit.submissions", "subreddits").split(",")
-    logging.info(f"Subreddits to monitor: {', '.join(subreddit_names)}")
+    logger.info(f"Subreddits to monitor: {', '.join(subreddit_names)}")
 
     # time in seconds before refreshing the posts
     subreddit_refresh_delay: float = float(config.get("reddit.submissions", "refresh_delay"))
@@ -89,7 +90,7 @@ def main() -> None:
     # loop through subreddits and posts up to post n
     submission_urls: list[str] = []
     for subreddit_name in subreddit_names:
-        logging.info(f"Scanning /r/{subreddit_name}")
+        logger.info(f"Scanning /r/{subreddit_name}")
         subreddit: praw.models.SubredditHelper = reddit.subreddit(subreddit_name) # type: ignore
 
         submission_sort: str = config.get("reddit.submissions", "post_sort").lower()
@@ -113,9 +114,9 @@ def main() -> None:
             case "top":
                 submissions = list(subreddit.top(limit=submission_limit))
             case _:
-                logging.error(f"Invalid submission sort option: {submission_sort}. Terminating.")
+                logger.error(f"Invalid submission sort option: {submission_sort}. Terminating.")
                 quit(1)
-        logging.info(f"Sorting by {submission_sort}")
+        logger.info(f"Sorting by {submission_sort}")
     
         for submission in submissions:
             # db_cursor = db_conn.cursor()
@@ -137,7 +138,7 @@ def main() -> None:
             if generated_submission_summary:
                 formatted_submission_summary: str = comment_format(generated_submission_summary)
             
-                logging.info(f"Summary:\n{formatted_submission_summary}")
+                logger.info(f"Summary:\n{formatted_submission_summary}")
 
                 # submit the comment!
                 submission.reply(formatted_submission_summary)

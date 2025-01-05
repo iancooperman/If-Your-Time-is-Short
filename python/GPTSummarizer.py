@@ -11,6 +11,8 @@ from newspaper.article import ArticleException
 from util import *
 
 
+logger: logging.Logger = logging.getLogger("iytis_log")
+
 class GPTSummarizer:
     def __init__(self, openai_api_key: str, model: str="gpt-3.5-turbo", **kwargs: dict[str, str]):
         openai.api_key = openai_api_key
@@ -36,7 +38,7 @@ class GPTSummarizer:
                 {"role": "user", "content": text}
             ]
         )
-        logging.debug(response)
+        logger.debug(response)
         return response["choices"][0]["message"]["content"] # type: ignore
     
     # Given a url, provide a 3-bulleted summary of the news article the url directs to
@@ -51,24 +53,24 @@ class GPTSummarizer:
             robot_file_parser.read()
 
             if robot_file_parser.can_fetch(self._newspaper_config.browser_user_agent, url): # if crawling is allowed...
-                logging.debug(f"{robots_txt_url} allows parsing of {url} by user agent {self._newspaper_config.browser_user_agent}")
+                logger.debug(f"{robots_txt_url} allows parsing of {url} by user agent {self._newspaper_config.browser_user_agent}")
                 
                 # retrieve the text content of the article
                 article: Article = Article(url, config=self._newspaper_config)
                 article.download()
                 article.parse()
-                logging.info(f"Article title: {article.title}")
+                logger.info(f"Article title: {article.title}")
                 article_body: str = article.text
                 
                 # generate a summary from the extracted article text
                 generated_summary: str | None = self.summarize(article_body)
                 return generated_summary
             else:
-                logging.debug(f"{robots_txt_url} prohibits parsing of {url} by user agent {self._newspaper_config.browser_user_agent}")
+                logger.debug(f"{robots_txt_url} prohibits parsing of {url} by user agent {self._newspaper_config.browser_user_agent}")
 
         except Exception as e:
-            logging.warning(f"{url} is not parseable at this time")
-            logging.warning(e)
+            logger.warning(f"{url} is not parseable at this time")
+            logger.warning(e)
 
         return None # mypy was yelling at me for not putting this
  
@@ -77,7 +79,7 @@ if __name__ == "__main__":
     config: configparser.ConfigParser = configparser.ConfigParser(allow_no_value=True)
     config.read("./" + "config.ini")
 
-    logging_config()
+    logger_init()
 
     summarizer = GPTSummarizer(config.get("openai", "api_key"))
     summary = summarizer.url_to_summary("https://www.washingtonpost.com/national-security/2023/07/22/air-force-general-ai-judeochristian/")
