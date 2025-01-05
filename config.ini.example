@@ -12,7 +12,6 @@ user_agent=IfYourTimeIsShort v0.1 by /u/BananaZen314159
 subreddits=commaseparated,listofsubreddits,here
 post_sort=rising
 post_limit=1
-refresh_delay=30
 
 [domain_blacklist]
 www.reddit.com
