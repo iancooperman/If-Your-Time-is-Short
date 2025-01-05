@@ -26,4 +26,6 @@ def logger_init() -> logging.Logger:
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
+    logger.propagate = False
+
     return logger
